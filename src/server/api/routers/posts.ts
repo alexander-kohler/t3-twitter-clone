@@ -2,9 +2,7 @@ import { z } from "zod";
 
 import { DEV_USER_ID } from "~/lib/dev-user";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import type { Prisma } from "@prisma/client";
-
-type PostWithAuthor = Prisma.PostGetPayload<{ include: { author: true } }>;
+import type { PostWithAuthor } from "~/server/db";
 
 const toPostWithUser = (post: PostWithAuthor) => ({
   post: {
@@ -21,31 +19,18 @@ const toPostWithUser = (post: PostWithAuthor) => ({
 });
 
 export const postsRouter = createTRPCRouter({
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    const posts = await ctx.prisma.post.findMany({
-      take: 100,
-      orderBy: { createdAt: "desc" },
-      include: { author: true },
-    });
-
-    return posts.map(toPostWithUser);
+  getAll: publicProcedure.query(({ ctx }) => {
+    return ctx.db.listPosts(100).map(toPostWithUser);
   }),
 
   create: publicProcedure
     .input(
       z.object({
         content: z.string().trim().min(1).max(255),
-      })
+      }),
     )
-    .mutation(async ({ ctx, input }) => {
-      const post = await ctx.prisma.post.create({
-        data: {
-          content: input.content,
-          authorId: DEV_USER_ID,
-        },
-        include: { author: true },
-      });
-
+    .mutation(({ ctx, input }) => {
+      const post = ctx.db.createEphemeralPost(DEV_USER_ID, input.content);
       return toPostWithUser(post);
     }),
 });

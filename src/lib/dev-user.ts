@@ -1,6 +1,6 @@
 import { avatarUrl } from "~/lib/avatar-url";
 
-/** Fixed local dev user — matches prisma/seed.mjs */
+/** Fixed local dev user — matches seed data in ~/server/seed-data.ts */
 export const DEV_USER_ID = "local-dev-user";
 
 export const DEV_USER = {

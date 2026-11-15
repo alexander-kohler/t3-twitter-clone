@@ -1,9 +1,19 @@
-import { PrismaClient } from "@prisma/client";
-import { avatarUrl } from "./avatar-url.mjs";
+import { avatarUrl } from "~/lib/avatar-url";
 
-const prisma = new PrismaClient();
+export type SeedUser = {
+  id: string;
+  username: string;
+  profilePicture: string;
+};
 
-const users = [
+export type SeedPost = {
+  id: string;
+  authorId: string;
+  content: string;
+  createdAt: Date;
+};
+
+export const SEED_USERS: SeedUser[] = [
   {
     id: "local-dev-user",
     username: "localdev",
@@ -31,7 +41,7 @@ const users = [
   },
 ];
 
-const posts = [
+export const SEED_POSTS: SeedPost[] = [
   {
     id: "post-welcome",
     authorId: "local-dev-user",
@@ -94,40 +104,6 @@ const posts = [
   },
 ];
 
-async function main() {
-  for (const user of users) {
-    await prisma.user.upsert({
-      where: { id: user.id },
-      update: {
-        username: user.username,
-        profilePicture: user.profilePicture,
-      },
-      create: user,
-    });
-  }
+const usersById = new Map(SEED_USERS.map((user) => [user.id, user]));
 
-  const seedPostIds = posts.map((post) => post.id);
-  await prisma.post.deleteMany({
-    where: { id: { notIn: seedPostIds } },
-  });
-
-  for (const post of posts) {
-    await prisma.post.upsert({
-      where: { id: post.id },
-      update: {
-        content: post.content,
-        authorId: post.authorId,
-        createdAt: post.createdAt,
-      },
-      create: post,
-    });
-  }
-}
-
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+export const getUserById = (id: string) => usersById.get(id);
